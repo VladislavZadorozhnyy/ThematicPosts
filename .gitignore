@@ -1,0 +1,13 @@
+PP_venv/
+venv/
+.venv/
+
+**/__pycache__/
+*.pyc
+
+files/
+
+yolov8m.pt
+
+.idea/
+.vscode/
