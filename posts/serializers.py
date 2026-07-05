@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from posts.models import Post, PostFile, File
 from .utils import Decoding, AiModel
+from django.db import transaction
 
 # Сериализаторы для получение постов
 class PostFileSerializer(serializers.ModelSerializer):
@@ -40,19 +41,22 @@ class PostCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         files_data = validated_data.pop('files', [])
-        post = Post.objects.create(**validated_data)
 
+        with transaction.atomic():
+            post = Post.objects.create(**validated_data)
 
-        if files_data:
-            name = files_data[0]['name']
-            content = Decoding(files_data[0]['data'], name).decode()
-            file = File.objects.create(
-                name=name,
-                path=content)
-            ai_instance = AiModel(file.path.path)
-            ai_classification = ai_instance.detect_objects_on_image()
-            PostFile.objects.create(post=post, file=file, labels=ai_classification)
+            if files_data:
+                name = files_data[0]['name']
+                content = Decoding(files_data[0]['data'], name).decode()
+
+                file = File.objects.create(name=name, path=content)
+                ai_instance = AiModel(file.path.path)
+                ai_classification = ai_instance.detect_objects_on_image()
+
+                PostFile.objects.create(post=post, file=file, labels=ai_classification)
+
         return post
+
 
 # Сериализаторы для удаления поста и всех его записей в дополнительных таблицах (и файлы)
 class DeletePostSerializer(serializers.ModelSerializer):

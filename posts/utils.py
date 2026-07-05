@@ -44,7 +44,7 @@ class Decoding:
             self.file_text = self.file_text.split(';base64,')[-1]
 
         try:
-            decoded_bytes = base64.b64decode(self.file_text)
+            decoded_bytes = base64.b64decode(self.file_text, validate=True)
         except (ValueError, binascii.Error):
             raise ValidationError(
                 {"files": "Переданные данные не являются валидной строкой Base64 изображения."}
